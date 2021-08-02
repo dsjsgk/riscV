@@ -1,9 +1,12 @@
 struct LSB{
+	
 	uint idx;
 	uint tp;
 	uint addr=0,imm=0;
 	int q=-1,q2=-1;
-	uint v=0,v2=0; 
+	uint v=0,v2=0;
+	uint _commited=0,_round=3;
+	uint code;
 };
 class Load_Store_Buffer{
 	public:
@@ -35,8 +38,16 @@ class Load_Store_Buffer{
 	void Update(uint idx,uint res) {
 		int tmp=head;
 		while(tmp!=tail) {
-			if(queue[tmp].q==idx) queue[tmp].v=res;
-			if(queue[tmp].q2==idx) queue[tmp].v2=res;
+			if(queue[tmp].idx==idx) queue[tmp]._commited=1;
+			if(queue[tmp].q==(int)idx) queue[tmp].v=res,queue[tmp].q=-1;
+			if(queue[tmp].q2==(int)idx) queue[tmp].v2=res,queue[tmp].q2=-1;
+			tmp=get_nxt(tmp);
+		}
+	}
+	void clear() {
+		int tmp=head;
+		while(tmp!=tail) {
+			if(queue[tmp]._commited==0) {tail=tmp;break;} 
 			tmp=get_nxt(tmp);
 		}
 	}

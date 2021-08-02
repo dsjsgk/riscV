@@ -9,6 +9,10 @@ struct ROB{
 	uint addr=0;
 	uint offset=0;
 	uint result2=0;
+	uint code;
+	uint pc;
+	uint debuger;
+	uint rs1=0,rs2=0;
 };
 //const int MAXN=15;
 class Reorder_Buffer{
@@ -38,5 +42,14 @@ class Reorder_Buffer{
 	void pop_front() {
 		head++;
 		head%=MAXN;
+	}
+	void print() {
+		cout<<"ROB_begin:\n";
+		int tmp=head;
+		while(tmp!=tail) {
+			cout<<queue[tmp].code<<" ";
+			tmp=get_nxt(tmp);
+		}
+		cout<<"\nROB_endl\n"; 
 	}
 };

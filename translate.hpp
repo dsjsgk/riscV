@@ -6,12 +6,18 @@ const int MAXN = 15;
 struct Instructions{
 	uint opc=0,rd=0,func3=0,rs1=0,rs2=0,func7=0,imm=0;
 	int tp=0;
+	uint code,pc;
+	int end=0;
 };
 
-Instructions __translate(uint t) {
-	uint tmp=1<<6;
+Instructions __translate(uint t,uint O) {
+	
+	uint tmp=1<<7;
 	tmp--;
 	Instructions res;res.opc=tmp&t;
+	res.code=t;
+	res.pc=O;
+	if(t==0x0ff00513) {res.end=1;return res;}
 	if((tmp&t)==3||((tmp&t)==19)||res.opc==103) {//I:
 		for(uint i=7;i<=11;++i) {
 			if(((uint)1<<i)&t) res.rd+=1<<i;
@@ -165,9 +171,10 @@ Instructions __translate(uint t) {
 			res.tp=11;//lui;
 		}
 		if(res.opc==23) res.tp=12;//auipc
+		return res;
 	}
 	if(res.opc==99) {
-		if((1<<11)&t) res.imm+=1<<11;
+		if((1<<7)&t) res.imm+=1<<11;
 		uint tmp=0;
 		for(uint i=8;i<=11;++i) if((1<<i)&t) tmp+=1<<i;
 		tmp>>=7;
@@ -182,6 +189,10 @@ Instructions __translate(uint t) {
 				res.imm+=(uint)1<<i; 
 			}
 		}
+//		if(res.code==4261844707u) {
+//			cerr<<"WWWWWWWWWWW\n";
+//			cerr<<res.imm<<"\n";
+//		}
 		for(uint i=15;i<=19;++i) {
 			if(((uint)1<<i)&t) res.rs1+=1<<i;
 		}
@@ -197,22 +208,22 @@ Instructions __translate(uint t) {
 		if(res.opc==99)
 		{
 			if(res.func3==0) {
-				res.opc=29;//beq
+				res.tp=29;//beq
 			}
 			if(res.func3==1) {
-				res.opc=30;//bne
+				res.tp=30;//bne
 			}
 			if(res.func3==4) {
-				res.opc=31;//blt
+				res.tp=31;//blt
 			}
 			if(res.func3==5) {
-				res.opc=32;//bge
+				res.tp=32;//bge
 			}
 			if(res.func3==6) {
-				res.opc=33;//bltu
+				res.tp=33;//bltu
 			}
 			if(res.func3==7) {
-				res.opc=34;//bgeu
+				res.tp=34;//bgeu
 			}
 		}
 		return res;
@@ -237,4 +248,5 @@ Instructions __translate(uint t) {
 		res.tp=35;//jal
 		return res;
 	}
+	return res;
 }
