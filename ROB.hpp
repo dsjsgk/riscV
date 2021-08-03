@@ -13,6 +13,7 @@ struct ROB{
 	uint pc;
 	uint debuger;
 	uint rs1=0,rs2=0;
+	Instructions temp;
 };
 //const int MAXN=15;
 class Reorder_Buffer{

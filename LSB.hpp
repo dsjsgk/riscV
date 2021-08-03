@@ -17,7 +17,7 @@ class Load_Store_Buffer{
 	}
 	int get_nxt(int cur) {
 		cur++;
-		if(cur>=MAXN) cur-=MAXN;
+		cur%=MAXN;
 		return cur;
 	}
 	void push_back(LSB tmp) {
@@ -38,7 +38,7 @@ class Load_Store_Buffer{
 	void Update(uint idx,uint res) {
 		int tmp=head;
 		while(tmp!=tail) {
-			if(queue[tmp].idx==idx) queue[tmp]._commited=1;
+			if(queue[tmp].idx==idx&&queue[tmp].tp>4) queue[tmp]._commited=1;
 			if(queue[tmp].q==(int)idx) queue[tmp].v=res,queue[tmp].q=-1;
 			if(queue[tmp].q2==(int)idx) queue[tmp].v2=res,queue[tmp].q2=-1;
 			tmp=get_nxt(tmp);

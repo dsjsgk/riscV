@@ -4,15 +4,15 @@
 #include "ROB.hpp"
 #include "LSB.hpp"
 #include "IQ.hpp"
-#define debug(x) cerr<<#x<<"="<<x<<"\n"
+//#define debug(x) cerr<<#x<<"="<<x<<"\n"
 using namespace std;
-int __tot=0;
 struct _register{
 	uint v=0;
 	int q=0;
 	bool status=0;
 };
-vector<pair<uint,uint>> up_reg_q,up_reg_v,up_reg_q_ex,up_reg_v_ex;
+vector<pair<uint,uint>> up_reg_q,up_reg_q_ex;
+vector<pair<uint,pair<uint,uint> > >  up_reg_v,up_reg_v_ex;
 vector<RS> EX_Run_;
 
 int Number_ROB=MAXN+1;
@@ -71,8 +71,8 @@ class CPU {
 	//finished;
 	inline void ISSUE_Run() {
 		if(_IQ_pre.isempty()) return;
-		if(_ROB_pre.isfull()) return ;
-		if(_LSB_pre.isfull()) return ;
+		if(_ROB.isfull()) return ;
+		if(_LSB.isfull()) return ;
 		int pos=_RS_pre.find_empty();
 		if(pos==-1) return ;
 		Instructions tmp=_IQ_pre.get_front();
@@ -86,6 +86,7 @@ class CPU {
 		nw2.debuger=tmp.tp;
 		nw2.rs1=tmp.rs1;
 		nw2.rs2=tmp.rs2;
+		nw2.temp=tmp;
 //		debug(tmp.code);
 //		debug(tmp.tp);
 //		debug(tmp.pc);
@@ -102,6 +103,7 @@ class CPU {
 				LSB nw;
 				nw.idx=_ROB.tail;
 				nw.tp=tmp.tp;
+				nw.code=tmp.code;
 				if(tmp.tp<=4)
 				{
 					if(reg_pre[tmp.rs1].status) {
@@ -130,6 +132,11 @@ class CPU {
 					nw.addr=tmp.rd;
 //					debug(nw.q);
 				}
+//				if(tmp.code==15181859u) {
+//					cerr<<"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n";
+//					debug(nw.v);
+//					debug(tmp.rs1);
+//				}
 				nw2.ready=0;
 				up_ROB.push_back(nw2);
 				up_LSB.push_back(nw);
@@ -179,6 +186,14 @@ class CPU {
 				nw2.ready=0;
 				nw.idx=_ROB.tail;
 				nw2.addr=tmp.rd;
+//				if(tmp.code==1426326547u) {
+//					cerr<<"Attentions!\n";
+//					debug(nw.vi);
+//					debug(nw.qi);
+//					debug(nw.vj);
+//					debug(nw.qj);
+//					
+//				}
 //				_ROB.push_back(nw2);
 //				debug(tmp.code);
 //				debug(nw.qi);
@@ -903,6 +918,14 @@ class CPU {
 		
 		if(pos!=-1) 
 		{
+//			if(_RS_pre.que15796531 
+//			debug("out");
+//			debug(pos);
+//			if(_RS_pre.queue[pos].idx==6) {
+//				cerr<<"Warning!!!!!\n";
+//				debug(_RS_pre.queue[pos].code);
+//				assert(0);
+//			}
 			EX_Run_.push_back(_RS_pre.queue[pos]),_RS.queue[pos].status=0;
 		}
 		if(Number_ROB>=MAXN) return ; 
@@ -914,6 +937,7 @@ class CPU {
 		if(EX_Run_.empty()) return ;
 		RS tmp=EX_Run_[0];EX_Run_.clear();
 		EX_to_ROB.first=tmp.idx;
+//		assert(EX_to_ROB.first!=6);
 //		cout<<"Execute--------------------\n"; 
 //		debug(tmp.idx);
 //		debug(tmp.code);
@@ -957,9 +981,10 @@ class CPU {
 	void REG_Run() {
 		for(uint i=0;i<up_reg_v_ex.size();++i) {
 			
-			uint idx=up_reg_v_ex[i].first,v=up_reg_v_ex[i].second;
+			uint idx=up_reg_v_ex[i].first,v=up_reg_v_ex[i].second.first;
 			if(idx==0) continue;
-			reg[idx].status=0;reg[idx].v=v;
+			reg[idx].v=v;
+			if(reg[idx].q==up_reg_v_ex[i].second.second) reg[idx].status=0;
 		}
 		for(uint i=0;i<up_reg_q_ex.size();++i) {
 			uint idx=up_reg_q_ex[i].first,v=up_reg_q_ex[i].second;
@@ -980,6 +1005,8 @@ class CPU {
 		_ROB.head=_ROB.tail=0;
 		_ROB_pre.head=_ROB_pre.tail=0;
 		_IQ.head=_IQ.tail=_IQ_pre.head=_IQ_pre.tail=0;
+		_RS.clear();
+		_RS_pre.clear();
 		up_reg_q.clear(),up_reg_v.clear();up_reg_q_ex.clear(),up_reg_v_ex.clear();
 		EX_Run_.clear();
 		Number_ROB=MAXN+1;
@@ -1002,6 +1029,12 @@ class CPU {
 		 if(commit_.empty()) return ;
 		 
 		 ROB tmp=commit_[0].first;
+//		 for(int i=0;i<=31;++i) {
+//			cout<<reg[i].v<<" ";
+//		}
+//		cout<<endl;
+//		 printf("%u %u\n",tmp.code,tmp.pc);
+		
 		 if(tmp.code == 0x0ff00513){
                 std::cout << std::dec << ((unsigned int)reg_pre[10].v& 255u);
                 exit(0);
@@ -1012,7 +1045,7 @@ class CPU {
 //		 debug(Number_ROB);
 		 if(tmp.tp==0) {
 		 	Number_Result=tmp.result;
-		 	up_reg_v_ex.push_back(make_pair(tmp.addr,tmp.result));
+		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(tmp.result,Number_ROB)));
 		 }
 		 else if(tmp.tp==1) {
 		 	if(tmp.result==1) {
@@ -1028,7 +1061,7 @@ class CPU {
 		 	Clear();
 		 	pc=tmp.offset+tmp.pc;
 		 	Number_Result=tmp.result;
-		 	up_reg_v_ex.push_back(make_pair(tmp.addr,tmp.result));
+		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(tmp.result,Number_ROB)));
 		 }
 		 else if(tmp.tp==3){
 		 	Clear();
@@ -1036,7 +1069,7 @@ class CPU {
 			pc=(tmp.result)&~1;
 //			debug(pc);
 		 	Number_Result=tmp.offset;
-		 	up_reg_v_ex.push_back(make_pair(tmp.addr,tmp.offset));
+		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(tmp.result,Number_ROB)));
 		 }
 		 else {
 		 	return ;
@@ -1051,15 +1084,23 @@ class CPU {
 //				debug(_ROB.tail);
 			}
 		}
+//		debug(_ROB.head);
+//		debug(_ROB.tail);
 		up_ROB.clear();
 		if(LSB_to_ROB_pre.first<MAXN) {
+//			debug(_ROB.head);
+//			debug(_ROB.tail); 
+//			assert(LSB_to_ROB_pre.first!=6);
 			_ROB.queue[LSB_to_ROB_pre.first].ready=1;
 			_ROB.queue[LSB_to_ROB_pre.first].result=LSB_to_ROB_pre.second.first;
 		}
-		if(EX_to_ROB_pre.first<MAXN) {
+		if(EX_to_ROB.first<MAXN) {
 //			debug(EX_to_ROB_pre.first);
-			_ROB.queue[EX_to_ROB_pre.first].ready=1;
-			_ROB.queue[EX_to_ROB_pre.first].result=EX_to_ROB_pre.second;
+//			debug(EX_to_ROB_pre.first)
+			
+			_ROB.queue[EX_to_ROB.first].ready=1;
+//			debug(_ROB.queue[EX_to_ROB_pre.first].code);
+			_ROB.queue[EX_to_ROB.first].result=EX_to_ROB.second;
 		}
 		if(_ROB_pre.isempty()) return ;
 		ROB tmp=_ROB_pre.get_front();
@@ -1071,21 +1112,28 @@ class CPU {
 		}
 		if(tmp.ready||tmp.tp==10) {
 			commit_.clear(); 
-			++__tot;
 			
-			debug("---------------");debug(__tot);
-//			debug(tmp.debuger);
-//			if(tmp.code==0) exit(0);
-			debug(tmp.code);
-			cout<<tmp.code<<" "<<tmp.pc<<endl;
+//			debug("---------------");debug(__tot);
+////			debug(tmp.debuger);
+////			if(tmp.code==0) exit(0);
+//			debug(tmp.ready);
+//			debug(tmp.code);
+//			debug(tmp.tp);
+//			debug(_ROB_pre.head);
+//			cout<<tmp.code<<" "<<endl;
 //			debug(tmp.rs1);
 //			debug(tmp.rs2);
-//			debug(tmp.debuger); 
+//			debug(tmp.debuger);
 
-//			if(tmp.code==265291155); 
-//			debug(tmp.result); 
+//			if(__tot==10000) exit(0);
+//			if(tmp.code==15181859u){
+//				for(int i=0;i<=31;++i) cerr<<reg[i].v<<" ";
+//				cerr<<endl;
+//			} 
+//			debug(tmp.rs1);
+//			debug(tmp.rs2); 
 //			debug(tmp.tp);
-			debug("---------------");
+//			debug("---------------");
 			commit_.push_back(make_pair(tmp,(uint)_ROB.head));_ROB.pop_front();
 		}
 	}
@@ -1146,12 +1194,14 @@ class CPU {
 				LSB_to_ROB.second.first=res;
 				return ;
 			}
+			LSB_to_ROB.first=MAXN+1;
 			res=tmp.v2;
 //			debug("PRINT!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"); 
 			
-			debug(tmp.code);
-			debug(tmp.v);
-			debug(tmp.imm);
+//			debug(tmp.code);
+//			debug(tmp.v+tmp.imm);
+//			debug(res);
+			if(tmp.v+tmp.imm==4112u) exit(0);  
 			if(tmp.tp==5) {
 				res=res&255u;
 				mem[tmp.v+tmp.imm]=res;
@@ -1210,8 +1260,9 @@ class CPU {
 //			debug(9); 
 			Commit();//
 //			if(T==500) break;
-			for(int i=0;i<=31;++i) cerr<<reg[i].v<<" ";
-			cerr<<endl;
+//			for(int i=0;i<=31;++i) cerr<<reg[i].v<<" ";
+//			cerr<<endl;
+//			cout<<(reg[1].v&255u)<<"\n";
 		}
 	}
 	void MAIN() {
@@ -1220,8 +1271,8 @@ class CPU {
 	}
 };
 int main() {
-	freopen("basicopt1.data","r",stdin);
-	freopen("1.out","w",stdout);
+//	freopen("gcd.data","r",stdin);
+//	freopen("1.out","w",stdout);
 	CPU Intel_Core_i9;
 	Intel_Core_i9.MAIN();
 	exit(0);
