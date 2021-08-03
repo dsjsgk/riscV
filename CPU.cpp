@@ -1065,11 +1065,12 @@ class CPU {
 	}
 	void run() {
 		while(1) {
-			ROB_Run();
 			IF_Run();
-			RS_Run();
-			LSB_Run();
+			ROB_Run();LSB_Run();
 			REG_Run();
+			RS_Run();
+			
+			
 			Update();
 			Execute();
 			ISSUE_Run();
