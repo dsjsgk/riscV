@@ -14,7 +14,7 @@ struct _register{
 vector<pair<uint,uint>> up_reg_q,up_reg_q_ex;
 vector<pair<uint,pair<uint,uint> > >  up_reg_v,up_reg_v_ex;
 vector<RS> EX_Run_;
-
+int __tot=0;
 int Number_ROB=MAXN+1;
 uint Number_Result; 
 
@@ -90,7 +90,7 @@ class CPU {
 //		debug(tmp.code);
 //		debug(tmp.tp);
 //		debug(tmp.pc);
-		_IQ.pop_front();//���µ�ǰ״̬
+		_IQ.pop_front();//更新当前状态
 		switch(tmp.tp) {
 			case 0:
 			case 1:
@@ -846,7 +846,7 @@ class CPU {
 				RS nw;
 				nw.code=tmp.code;
 //				ROB nw2;
-				nw.vi=pc;
+				nw.vi=tmp.pc;
 				nw.vj=0;
 				nw.status=1;
 				nw.op=0;
@@ -881,7 +881,7 @@ class CPU {
 				nw.idx=_ROB.tail;
 				nw2.addr=tmp.rd;
 				nw2.tp=3;
-				nw2.offset=pc;
+				nw2.offset=tmp.pc;
 				up_ROB.push_back(nw2);
 				up_RS.push_back(nw);
 				//jalr
@@ -984,7 +984,8 @@ class CPU {
 			uint idx=up_reg_v_ex[i].first,v=up_reg_v_ex[i].second.first;
 			if(idx==0) continue;
 			reg[idx].v=v;
-			if(reg[idx].q==up_reg_v_ex[i].second.second) reg[idx].status=0;
+			if(reg[idx].q==up_reg_v_ex[i].second.second) 
+			reg[idx].status=0;
 		}
 		for(uint i=0;i<up_reg_q_ex.size();++i) {
 			uint idx=up_reg_q_ex[i].first,v=up_reg_q_ex[i].second;
@@ -1060,16 +1061,16 @@ class CPU {
 		 else if(tmp.tp==2) {
 		 	Clear();
 		 	pc=tmp.offset+tmp.pc;
-		 	Number_Result=tmp.result;
-		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(tmp.result,Number_ROB)));
+		 	Number_Result=tmp.pc+4u;
+		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(Number_Result,Number_ROB)));
 		 }
 		 else if(tmp.tp==3){
 		 	Clear();
 //			debug(tmp.result);
 			pc=(tmp.result)&~1;
 //			debug(pc);
-		 	Number_Result=tmp.offset;
-		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(tmp.result,Number_ROB)));
+		 	Number_Result=tmp.pc+4u;
+		 	up_reg_v_ex.push_back(make_pair(tmp.addr,make_pair(Number_Result,Number_ROB)));
 		 }
 		 else {
 		 	return ;
@@ -1109,7 +1110,7 @@ class CPU {
 		if(tmp.code==0x0ff00513) {
 			std::cout << std::dec << ((unsigned int)reg_pre[10].v& 255u);
                 exit(0);
-		}
+		} 
 		if(tmp.ready||tmp.tp==10) {
 			commit_.clear(); 
 			
@@ -1120,12 +1121,12 @@ class CPU {
 //			debug(tmp.code);
 //			debug(tmp.tp);
 //			debug(_ROB_pre.head);
-//			cout<<tmp.code<<" "<<endl;
+//			cout<<tmp.code<<" "<<tmp.pc<<endl;
 //			debug(tmp.rs1);
 //			debug(tmp.rs2);
 //			debug(tmp.debuger);
-
-//			if(__tot==10000) exit(0);
+//			++__tot;
+//			if(__tot==4) exit(0);
 //			if(tmp.code==15181859u){
 //				for(int i=0;i<=31;++i) cerr<<reg[i].v<<" ";
 //				cerr<<endl;
@@ -1260,7 +1261,7 @@ class CPU {
 //			debug(9); 
 			Commit();//
 //			if(T==500) break;
-//			for(int i=0;i<=31;++i) cerr<<reg[i].v<<" ";
+//			for(int i=0;i<=31;++i) c<<reg[i].v<<" ";
 //			cerr<<endl;
 //			cout<<(reg[1].v&255u)<<"\n";
 		}
@@ -1271,7 +1272,7 @@ class CPU {
 	}
 };
 int main() {
-//	freopen("gcd.data","r",stdin);
+//	freopen("queens.data","r",stdin);
 //	freopen("1.out","w",stdout);
 	CPU Intel_Core_i9;
 	Intel_Core_i9.MAIN();
